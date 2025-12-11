@@ -10,7 +10,7 @@ services:
   # 数据库服务 - PostgreSQL
   # ---------------------------------------------------------------------------
   db:
-    image: postgres:17
+    image: postgres:18
     restart: always  # 容器退出后自动重启
     # 健康检查配置
     healthcheck:
