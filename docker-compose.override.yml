@@ -1,115 +1,150 @@
+# =============================================================================
+# Docker Compose 本地开发覆盖配置
+# 用途：提供本地开发专用的配置，如热重载、端口映射、调试工具等
+# 说明：运行 docker compose up 时会自动与 docker-compose.yml 合并
+# =============================================================================
+
 services:
 
-  # Local services are available on their ports, but also available on:
-  # http://api.localhost.tiangolo.com: backend
-  # http://dashboard.localhost.tiangolo.com: frontend
-  # etc. To enable it, update .env, set:
-  # DOMAIN=localhost.tiangolo.com
+  # ---------------------------------------------------------------------------
+  # 本地 Traefik 代理
+  # 作用：在本地模拟生产环境的域名路由
+  # 可选功能：修改 .env 中的 DOMAIN=localhost.tiangolo.com 启用域名访问
+  #   - http://api.localhost.tiangolo.com → 后端
+  #   - http://dashboard.localhost.tiangolo.com → 前端
+  # ---------------------------------------------------------------------------
   proxy:
     image: traefik:3.0
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock  # 让 Traefik 读取 Docker 容器信息
     ports:
-      - "80:80"
-      - "8090:8080"
-    # Duplicate the command from docker-compose.yml to add --api.insecure=true
+      - "80:80"      # HTTP 端口
+      - "8090:8080"  # Traefik Dashboard 端口
     command:
-      # Enable Docker in Traefik, so that it reads labels from Docker services
+      # 启用 Docker 提供者，自动发现容器
       - --providers.docker
-      # Add a constraint to only use services with the label for this stack
+      # 只代理带有指定标签的服务
       - --providers.docker.constraints=Label(`traefik.constraint-label`, `traefik-public`)
-      # Do not expose all Docker services, only the ones explicitly exposed
+      # 默认不暴露所有服务，只暴露明确标记的
       - --providers.docker.exposedbydefault=false
-      # Create an entrypoint "http" listening on port 80
+      # 创建 HTTP 入口点，监听 80 端口
       - --entrypoints.http.address=:80
-      # Create an entrypoint "https" listening on port 443
+      # 创建 HTTPS 入口点，监听 443 端口
       - --entrypoints.https.address=:443
-      # Enable the access log, with HTTP requests
+      # 启用访问日志
       - --accesslog
-      # Enable the Traefik log, for configurations and errors
+      # 启用 Traefik 日志
       - --log
-      # Enable debug logging for local development
+      # 启用 DEBUG 级别日志（本地开发用）
       - --log.level=DEBUG
-      # Enable the Dashboard and API
+      # 启用 Dashboard 和 API
       - --api
-      # Enable the Dashboard and API in insecure mode for local development
+      # 以不安全模式启用 Dashboard（本地开发用，生产环境禁止）
       - --api.insecure=true
     labels:
-      # Enable Traefik for this service, to make it available in the public network
+      # 启用 Traefik 代理此服务
       - traefik.enable=true
       - traefik.constraint-label=traefik-public
-      # Dummy https-redirect middleware that doesn't really redirect, only to
-      # allow running it locally
+      # 定义一个空的 https-redirect 中间件（本地不需要真正重定向）
       - traefik.http.middlewares.https-redirect.contenttype.autodetect=false
     networks:
       - traefik-public
       - default
 
+  # ---------------------------------------------------------------------------
+  # 数据库服务 - 本地开发覆盖
+  # ---------------------------------------------------------------------------
   db:
-    restart: "no"
+    restart: "no"  # 本地开发时不自动重启
     ports:
-      - "5432:5432"
+      - "5432:5432"  # 暴露端口，允许本地数据库工具连接
 
+  # ---------------------------------------------------------------------------
+  # Adminer - 本地开发覆盖
+  # 访问地址：http://localhost:8080
+  # ---------------------------------------------------------------------------
   adminer:
     restart: "no"
     ports:
       - "8080:8080"
 
+  # ---------------------------------------------------------------------------
+  # 后端服务 - 本地开发覆盖
+  # 访问地址：http://localhost:8000
+  # ---------------------------------------------------------------------------
   backend:
     restart: "no"
     ports:
-      - "8000:8000"
+      - "8000:8000"  # 暴露后端 API 端口
     build:
       context: ./backend
-    # command: sleep infinity  # Infinite loop to keep container alive doing nothing
+    # 启动命令：使用 FastAPI 开发模式（带热重载）
     command:
       - fastapi
       - run
-      - --reload
+      - --reload  # 启用热重载，代码修改后自动重启
       - "app/main.py"
+    # Docker Compose Watch 配置（用于 docker compose watch 命令）
     develop:
       watch:
+        # 同步后端代码到容器
         - path: ./backend
-          action: sync
+          action: sync  # 文件变化时同步到容器
           target: /app
           ignore:
             - ./backend/.venv
             - .venv
+        # 依赖文件变化时重新构建镜像
         - path: ./backend/pyproject.toml
           action: rebuild
-    # TODO: remove once coverage is done locally
+    # 挂载测试覆盖率报告目录
     volumes:
       - ./backend/htmlcov:/app/htmlcov
+    # 本地开发使用 Mailcatcher 作为邮件服务
     environment:
       SMTP_HOST: "mailcatcher"
       SMTP_PORT: "1025"
       SMTP_TLS: "false"
       EMAILS_FROM_EMAIL: "noreply@example.com"
 
+  # ---------------------------------------------------------------------------
+  # Mailcatcher - 邮件捕获工具
+  # 作用：拦截应用发送的所有邮件，用于本地测试
+  # Web 界面：http://localhost:1080
+  # SMTP 端口：1025
+  # ---------------------------------------------------------------------------
   mailcatcher:
     image: schickling/mailcatcher
     ports:
-      - "1080:1080"
-      - "1025:1025"
+      - "1080:1080"  # Web 界面
+      - "1025:1025"  # SMTP 端口
 
+  # ---------------------------------------------------------------------------
+  # 前端服务 - 本地开发覆盖
+  # 访问地址：http://localhost:5173
+  # ---------------------------------------------------------------------------
   frontend:
     restart: "no"
     ports:
-      - "5173:80"
+      - "5173:80"  # 映射到 5173 端口（与 Vite 开发服务器一致）
     build:
       context: ./frontend
       args:
-        - VITE_API_URL=http://localhost:8000
+        - VITE_API_URL=http://localhost:8000  # 本地后端地址
         - NODE_ENV=development
 
+  # ---------------------------------------------------------------------------
+  # Playwright - 端到端测试服务
+  # 用途：运行前端 E2E 测试
+  # ---------------------------------------------------------------------------
   playwright:
     build:
       context: ./frontend
       dockerfile: Dockerfile.playwright
       args:
-        - VITE_API_URL=http://backend:8000
+        - VITE_API_URL=http://backend:8000  # 使用容器内部地址
         - NODE_ENV=production
-    ipc: host
+    ipc: host  # 共享 IPC 命名空间（Playwright 需要）
     depends_on:
       - backend
       - mailcatcher
@@ -118,16 +153,17 @@ services:
     environment:
       - VITE_API_URL=http://backend:8000
       - MAILCATCHER_HOST=http://mailcatcher:1080
-      # For the reports when run locally
-      - PLAYWRIGHT_HTML_HOST=0.0.0.0
+      - PLAYWRIGHT_HTML_HOST=0.0.0.0  # 允许从外部访问测试报告
       - CI=${CI}
     volumes:
-      - ./frontend/blob-report:/app/blob-report
-      - ./frontend/test-results:/app/test-results
+      - ./frontend/blob-report:/app/blob-report      # 测试报告
+      - ./frontend/test-results:/app/test-results    # 测试结果
     ports:
-      - 9323:9323
+      - 9323:9323  # Playwright 报告端口
 
+# =============================================================================
+# 网络定义
+# =============================================================================
 networks:
   traefik-public:
-    # For local dev, don't expect an external Traefik network
-    external: false
+    external: false  # 本地开发时创建本地网络（不使用外部网络）
