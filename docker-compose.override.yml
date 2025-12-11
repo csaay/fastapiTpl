@@ -14,7 +14,7 @@ services:
   #   - http://dashboard.localhost.tiangolo.com → 前端
   # ---------------------------------------------------------------------------
   proxy:
-    image: traefik:3.0
+    image: traefik:3.6
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock  # 让 Traefik 读取 Docker 容器信息
     ports:
