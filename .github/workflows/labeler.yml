@@ -1,4 +1,4 @@
-name: Labels
+name: Labels # 标签管理
 on:
   pull_request_target:
     types:
@@ -6,28 +6,28 @@ on:
       - synchronize
       - reopened
       # For label-checker
-      - labeled
+      - labeled # 标签变动时触发
       - unlabeled
 
 jobs:
   labeler:
     permissions:
       contents: read
-      pull-requests: write
+      pull-requests: write # 写 PR 权限以添加标签
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/labeler@v6
-        if: ${{ github.event.action != 'labeled' && github.event.action != 'unlabeled' }}
+      - uses: actions/labeler@v6 # 自动打标签 Action
+        if: ${{ github.event.action != 'labeled' && github.event.action != 'unlabeled' }} # 排除标签变动触发的情况，避免死循环或冗余
       - run: echo "Done adding labels"
   # Run this after labeler applied labels
   check-labels:
     needs:
-      - labeler
+      - labeler # 依赖 labeler 任务
     permissions:
       pull-requests: read
     runs-on: ubuntu-latest
     steps:
-      - uses: docker://agilepathway/pull-request-label-checker:latest
+      - uses: docker://agilepathway/pull-request-label-checker:latest # 检查 PR 是否包含必要的标签（如 breaking, feature 等）
         with:
           one_of: breaking,security,feature,bug,refactor,upgrade,docs,lang-all,internal
           repo_token: ${{ secrets.GITHUB_TOKEN }}

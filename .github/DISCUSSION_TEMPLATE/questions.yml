@@ -3,85 +3,85 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your interest in this project! 🚀
+        感谢你对这个项目感兴趣！ 🚀
 
-        Please follow these instructions, fill every question, and do every step. 🙏
+        请遵循以下说明，填写每一个问题，并完成每一个步骤。 🙏
 
-        I'm asking this because answering questions and solving problems in GitHub is what consumes most of the time.
+        我之所以这样要求，是因为在 GitHub 上回答问题和解决问题消耗了大部分时间。
 
-        I end up not being able to add new features, fix bugs, review pull requests, etc. as fast as I wish because I have to spend too much time handling questions.
+        因为不得不花费太多时间处理问题，导致我无法像希望的那样快速添加新功能、修复 Bug、审查 Pull Requests 等。
 
-        All that, on top of all the incredible help provided by a bunch of community members, that give a lot of their time to come here and help others.
+        所有这一切，都是在众多社区成员提供的不可思议的帮助之上的，他们付出了很多时间来到这里帮助他人。
 
-        That's a lot of work, but if more users came to help others like them just a little bit more, it would be much less effort for them (and you and me 😅).
+        这是很多工作，但如果有更多像他们一样的用户能稍微多帮助一下他人，那么每个人的负担就会减轻很多（包括你和我 😅）。
 
-        By asking questions in a structured way (following this) it will be much easier to help you.
+        通过以结构化的方式提问（遵循此模板），将更容易帮助你。
 
-        And there's a high chance that you will find the solution along the way and you won't even have to submit it and wait for an answer. 😎
+        而且很有可能在过程中你就能找到解决方案，甚至不需要提交问题和等待回复。 😎
 
-        As there are too many questions, I'll have to discard and close the incomplete ones. That will allow me (and others) to focus on helping people like you that follow the whole process and help us help you. 🤓
+        由于问题太多，我将不得不丢弃并关闭不完整的问题。这将允许我（和其他人）专注于帮助像你一样遵循整个流程并帮助我们帮助你的人。 🤓
   - type: checkboxes
     id: checks
     attributes:
-      label: First Check
-      description: Please confirm and check all the following options.
+      label: 初步检查
+      description: 请确认并勾选以下所有选项。
       options:
-        - label: I added a very descriptive title here.
+        - label: 我在此处添加了一个非常具有描述性的标题。
           required: true
-        - label: I used the GitHub search to find a similar question and didn't find it.
+        - label: 我使用了 GitHub 搜索查找相似问题，但没有找到。
           required: true
-        - label: I searched in the documentation/README.
+        - label: 我已经在文档/README 中进行了搜索。
           required: true
-        - label: I already searched in Google "How to do X" and didn't find any information.
+        - label: 我已经在 Google 搜索了“如何做 X”，但没有找到任何信息。
           required: true
-        - label: I already read and followed all the tutorial in the docs/README and didn't find an answer.
+        - label: 我已经阅读并遵循了 docs/README 中的所有教程，但没有找到答案。
           required: true
   - type: checkboxes
     id: help
     attributes:
-      label: Commit to Help
+      label: 承诺互助
       description: |
-        After submitting this, I commit to one of:
+        提交此问题后，我承诺做到以下之一：
 
-          * Read open questions until I find 2 where I can help someone and add a comment to help there.
-          * I already hit the "watch" button in this repository to receive notifications and I commit to help at least 2 people that ask questions in the future.
+          * 阅读未解决的问题，直到找到 2 个我可以帮助他人的问题，并在那里添加评论提供帮助。
+          * 我已经点击了这个仓库的“Watch”按钮以接收通知，并承诺将来至少帮助 2 个提问的人。
 
       options:
-        - label: I commit to help with one of those options 👆
+        - label: 我承诺会做到以上选项之一 👆
           required: true
   - type: textarea
     id: example
     attributes:
-      label: Example Code
+      label: 代码示例
       description: |
-        Please add a self-contained, [minimal, reproducible, example](https://stackoverflow.com/help/minimal-reproducible-example) with your use case.
+        请添加一个包含你用例的、自包含的、[最小可复现示例](https://stackoverflow.com/help/minimal-reproducible-example)。
 
-        If I (or someone) can copy it, run it, and see it right away, there's a much higher chance I (or someone) will be able to help you.
+        如果我（或其他人）可以复制它、运行它并立即看到问题，那么我（或其他人）能帮助你的几率就会大得多。
 
       placeholder: |
-        Write your example code here.
+        在这里写下你的代码示例。
       render: Text
     validations:
       required: true
   - type: textarea
     id: description
     attributes:
-      label: Description
+      label: 问题描述
       description: |
-        What is the problem, question, or error?
+        问题、疑问或错误是什么？
 
-        Write a short description telling me what you are doing, what you expect to happen, and what is currently happening.
+        写一段简短的描述，告诉我你在做什么，你期望发生什么，以及目前实际发生了什么。
       placeholder: |
-        * Open the browser and call the endpoint `/`.
-        * It returns a JSON with `{"message": "Hello World"}`.
-        * But I expected it to return `{"message": "Hello Morty"}`.
+        * 打开浏览器并调用端点 `/`。
+        * 它返回一个 JSON `{"message": "Hello World"}`。
+        * 但我期望它返回 `{"message": "Hello Morty"}`。
     validations:
       required: true
   - type: dropdown
     id: os
     attributes:
-      label: Operating System
-      description: What operating system are you on?
+      label: 操作系统
+      description: 你使用的是什么操作系统？
       multiple: true
       options:
         - Linux
@@ -93,18 +93,18 @@ body:
   - type: textarea
     id: os-details
     attributes:
-      label: Operating System Details
-      description: You can add more details about your operating system here, in particular if you chose "Other".
+      label: 操作系统详情
+      description: 你可以在这里添加更多关于你的操作系统的详细信息，特别是如果你选择了“Other”。
     validations:
       required: true
   - type: input
     id: python-version
     attributes:
-      label: Python Version
+      label: Python 版本
       description: |
-        What Python version are you using?
+        你使用的是什么 Python 版本？
 
-        You can find the Python version with:
+        你可以通过以下命令查看 Python 版本：
 
         ```bash
         python --version
@@ -114,5 +114,5 @@ body:
   - type: textarea
     id: context
     attributes:
-      label: Additional Context
-      description: Add any additional context information or screenshots you think are useful.
+      label: 额外上下文
+      description: 添加你认为有用的任何额外上下文信息或截图。

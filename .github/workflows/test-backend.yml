@@ -1,39 +1,39 @@
-name: Test Backend
+name: Test Backend # 测试后端服务
 
 on:
   push:
     branches:
-      - main
+      - main # 推送到 main 分支时触发
   pull_request:
     types:
-      - opened
-      - synchronize
+      - opened # 新建 PR 时触发
+      - synchronize # PR 更新代码时触发
 
 jobs:
   test-backend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # 使用 Ubuntu 环境
     steps:
-      - name: Checkout
+      - name: Checkout # 检出代码
         uses: actions/checkout@v6
-      - name: Set up Python
+      - name: Set up Python # 安装 Python 环境
         uses: actions/setup-python@v6
         with:
           python-version: "3.10"
-      - name: Install uv
+      - name: Install uv # 安装 uv 包管理器（比标准 pip 更快）
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.4.15"
-          enable-cache: true
-      - run: docker compose down -v --remove-orphans
-      - run: docker compose up -d db mailcatcher
-      - name: Migrate DB
+          enable-cache: true # 启用缓存加速
+      - run: docker compose down -v --remove-orphans # 清理之前可能存在的 Docker 容器和卷
+      - run: docker compose up -d db mailcatcher # 启动数据库和邮件捕捉服务
+      - name: Migrate DB # 运行数据库迁移
         run: uv run bash scripts/prestart.sh
         working-directory: backend
-      - name: Run tests
+      - name: Run tests # 运行测试脚本
         run: uv run bash scripts/tests-start.sh "Coverage for ${{ github.sha }}"
         working-directory: backend
-      - run: docker compose down -v --remove-orphans
-      - name: Store coverage files
+      - run: docker compose down -v --remove-orphans # 测试完成后清理环境
+      - name: Store coverage files # 上传测试覆盖率报告作为构件
         uses: actions/upload-artifact@v5
         with:
           name: coverage-html

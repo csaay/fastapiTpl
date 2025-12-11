@@ -1,19 +1,19 @@
-name: "Conflict detector"
+name: "Conflict detector" # 冲突检测器
 on:
-  push:
-  pull_request_target:
-    types: [synchronize]
+  push: # 推送到任意分支时触发
+  pull_request_target: # 当 Pull Request 更新时触发（在目标分支上下文中运行）
+    types: [synchronize] # 仅在同步（更新代码）时触发
 
 jobs:
   main:
     permissions:
-      contents: read
-      pull-requests: write
-    runs-on: ubuntu-latest
+      contents: read # 读取仓库内容权限
+      pull-requests: write # 修改 PR 权限（用于打标签和评论）
+    runs-on: ubuntu-latest # 使用最新的 Ubuntu 环境
     steps:
-      - name: Check if PRs have merge conflicts
+      - name: Check if PRs have merge conflicts # 检查 PR 是否存在合并冲突
         uses: eps1lon/actions-label-merge-conflict@v3
         with:
-          dirtyLabel: "conflicts"
-          repoToken: "${{ secrets.GITHUB_TOKEN }}"
-          commentOnDirty: "This pull request has a merge conflict that needs to be resolved."
+          dirtyLabel: "conflicts" # 冲突时添加的标签名称
+          repoToken: "${{ secrets.GITHUB_TOKEN }}" # 用于操作 PR 的 GitHub 令牌
+          commentOnDirty: "检测到合并冲突，请解决后再次提交。" # 发现冲突时的自动评论内容

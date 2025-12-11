@@ -1,31 +1,31 @@
-name: Smokeshow
+name: Smokeshow # 冒烟测试/覆盖率报告展示
 
 on:
   workflow_run:
     workflows: [Test Backend]
-    types: [completed]
+    types: [completed] # 监听 Test Backend 工作流完成事件
 
 jobs:
   smokeshow:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }} # 仅在上游工作流成功时运行
     runs-on: ubuntu-latest
     permissions:
       actions: read
-      statuses: write
+      statuses: write # 允许写入 commit status
 
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
-      - run: pip install smokeshow
-      - uses: actions/download-artifact@v6
+      - run: pip install smokeshow # 安装 smokeshow 工具
+      - uses: actions/download-artifact@v6 # 下载测试覆盖率构件
         with:
           name: coverage-html
           path: backend/htmlcov
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
-      - run: smokeshow upload backend/htmlcov
+      - run: smokeshow upload backend/htmlcov # 上传覆盖率数据到 Smokeshow 服务
         env:
           SMOKESHOW_GITHUB_STATUS_DESCRIPTION: Coverage {coverage-percentage}
           SMOKESHOW_GITHUB_COVERAGE_THRESHOLD: 90

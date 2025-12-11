@@ -1,21 +1,21 @@
-name: Deploy to Staging
+name: Deploy to Staging # 部署到预发布环境
 
 on:
   push:
     branches:
-      - main
+      - main # 仅在推送到 main 分支时触发
 
 jobs:
   deploy:
     # Do not deploy in the main repository, only in user projects
-    if: github.repository_owner != 'fastapi'
+    if: github.repository_owner != 'fastapi' # 防止在官方模板仓库中误运行，仅在用户仓库运行
     runs-on:
-      - self-hosted
-      - staging
+      - self-hosted # 使用自托管的 Runner（运行器）
+      - staging # 指定在带有 staging 标签的服务器上运行
     env:
       ENVIRONMENT: staging
-      DOMAIN: ${{ secrets.DOMAIN_STAGING }}
-      STACK_NAME: ${{ secrets.STACK_NAME_STAGING }}
+      DOMAIN: ${{ secrets.DOMAIN_STAGING }} # 预发布环境域名
+      STACK_NAME: ${{ secrets.STACK_NAME_STAGING }} # Docker Compose 项目名称
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
       FIRST_SUPERUSER: ${{ secrets.FIRST_SUPERUSER }}
       FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
@@ -26,7 +26,7 @@ jobs:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
     steps:
-      - name: Checkout
+      - name: Checkout # 检出代码
         uses: actions/checkout@v6
-      - run: docker compose -f docker-compose.yml --project-name ${{ secrets.STACK_NAME_STAGING }} build
-      - run: docker compose -f docker-compose.yml --project-name ${{ secrets.STACK_NAME_STAGING }} up -d
+      - run: docker compose -f docker-compose.yml --project-name ${{ secrets.STACK_NAME_STAGING }} build # 构建服务镜像
+      - run: docker compose -f docker-compose.yml --project-name ${{ secrets.STACK_NAME_STAGING }} up -d # 以后台模式启动服务

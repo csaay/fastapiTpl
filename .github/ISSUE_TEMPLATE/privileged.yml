@@ -1,22 +1,22 @@
-name: Privileged
-description: You are @tiangolo or he asked you directly to create an issue here. If not, check the other options. 👇
+name: 特权用户
+description: 如果你是 @tiangolo 或者他直接要求你在这里创建 Issue。如果要反馈其他问题，请检查其他选项。 👇
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your interest in this project! 🚀
+        感谢你对这个项目感兴趣！ 🚀
 
-        If you are not @tiangolo or he didn't ask you directly to create an issue here, please start the conversation in a [Question in GitHub Discussions](https://github.com/tiangolo/full-stack-fastapi-template/discussions/categories/questions) instead.
+        如果你不是 @tiangolo 或者他没有直接要求你在这里创建 Issue，请转到 [GitHub Discussions 中的提问区](https://github.com/csaay/fastapiTpl/discussions/categories/questions) 开始讨论。
   - type: checkboxes
     id: privileged
     attributes:
-      label: Privileged issue
-      description: Confirm that you are allowed to create an issue here.
+      label: 特权 Issue
+      description: 确认你被允许在这里创建 Issue。
       options:
-        - label: I'm @tiangolo or he asked me directly to create an issue here.
+        - label: 我是 @tiangolo 或者他直接要求我在这里创建 Issue。
           required: true
   - type: textarea
     id: content
     attributes:
-      label: Issue Content
-      description: Add the content of the issue here.
+      label: Issue 内容
+      description: 在这里添加 Issue 的内容。

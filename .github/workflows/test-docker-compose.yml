@@ -1,4 +1,4 @@
-name: Test Docker Compose
+name: Test Docker Compose # 测试 Docker Compose 构建与运行
 
 on:
   push:
@@ -16,11 +16,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - run: docker compose build
-      - run: docker compose down -v --remove-orphans
-      - run: docker compose up -d --wait backend frontend adminer
-      - name: Test backend is up
+      - run: docker compose build # 测试构建镜像
+      - run: docker compose down -v --remove-orphans # 清理环境
+      - run: docker compose up -d --wait backend frontend adminer # 启动服务并等待就绪
+      - name: Test backend is up # 测试后端健康检查
         run: curl http://localhost:8000/api/v1/utils/health-check
-      - name: Test frontend is up
+      - name: Test frontend is up # 测试前端是否可访问
         run: curl http://localhost:5173
-      - run: docker compose down -v --remove-orphans
+      - run: docker compose down -v --remove-orphans # 清理环境

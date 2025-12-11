@@ -1,12 +1,12 @@
-name: Latest Changes
+name: Latest Changes # 自动更新 Release Notes
 
 on:
   pull_request_target:
     branches:
       - main
     types:
-      - closed
-  workflow_dispatch:
+      - closed # 仅在 PR 关闭时触发（通常用于合并后）
+  workflow_dispatch: # 允许手动触发
     inputs:
       number:
         description: PR number
@@ -29,12 +29,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           # To allow latest-changes to commit to the main branch
-          token: ${{ secrets.LATEST_CHANGES }}
-      - uses: tiangolo/latest-changes@0.4.1
+          token: ${{ secrets.LATEST_CHANGES }} # 使用特权 Token 以便将更新提交回 main 分支
+      - uses: tiangolo/latest-changes@0.4.1 # 自动生成最新变更日志
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          latest_changes_file: ./release-notes.md
-          latest_changes_header: "## Latest Changes"
-          end_regex: "^## "
+          latest_changes_file: ./release-notes.md # 变更日志文件
+          latest_changes_header: "## Latest Changes" # 标题头
+          end_regex: "^## " # 结束匹配正则
           debug_logs: true
-          label_header_prefix: "### "
+          label_header_prefix: "### " # 标签分组前缀

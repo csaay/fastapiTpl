@@ -1,25 +1,25 @@
-docs:
+docs: # 文档类变更规则
   - all:
       - changed-files:
           - any-glob-to-any-file:
-              - "**/*.md"
+              - "**/*.md" # 任意 md 文件
           - all-globs-to-all-files:
-              - "!frontend/**"
-              - "!backend/**"
+              - "!frontend/**" # 排除前端目录
+              - "!backend/**" # 排除后端目录
               - "!.github/**"
               - "!scripts/**"
               - "!.gitignore"
               - "!.pre-commit-config.yaml"
 
-internal:
+internal: # 内部/配置类变更规则
   - all:
       - changed-files:
           - any-glob-to-any-file:
-              - .github/**
-              - scripts/**
+              - .github/** # .github 目录下的配置
+              - scripts/** # 脚本目录
               - .gitignore
               - .pre-commit-config.yaml
           - all-globs-to-all-files:
-              - "!./**/*.md"
+              - "!./**/*.md" # 排除 md 文档
               - "!frontend/**"
               - "!backend/**"

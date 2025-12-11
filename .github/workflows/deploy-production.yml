@@ -1,21 +1,21 @@
-name: Deploy to Production
+name: Deploy to Production # 部署到生产环境
 
 on:
   release:
     types:
-      - published
+      - published # 发布 Release 时触发
 
 jobs:
   deploy:
     # Do not deploy in the main repository, only in user projects
-    if: github.repository_owner != 'fastapi'
+    if: github.repository_owner != 'fastapi' # 避免在官方模板仓库运行，仅在用户仓库生效
     runs-on:
-      - self-hosted
-      - production
+      - self-hosted # 使用自托管运行器
+      - production # 指定标签为 production 的运行器
     env:
       ENVIRONMENT: production
-      DOMAIN: ${{ secrets.DOMAIN_PRODUCTION }}
-      STACK_NAME: ${{ secrets.STACK_NAME_PRODUCTION }}
+      DOMAIN: ${{ secrets.DOMAIN_PRODUCTION }} # 生产环境域名
+      STACK_NAME: ${{ secrets.STACK_NAME_PRODUCTION }} # Docker Compose 项目名
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
       FIRST_SUPERUSER: ${{ secrets.FIRST_SUPERUSER }}
       FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
@@ -26,7 +26,7 @@ jobs:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
     steps:
-      - name: Checkout
+      - name: Checkout # 检出代码
         uses: actions/checkout@v6
-      - run: docker compose -f docker-compose.yml --project-name ${{ secrets.STACK_NAME_PRODUCTION }} build
-      - run: docker compose -f docker-compose.yml --project-name ${{ secrets.STACK_NAME_PRODUCTION }} up -d
+      - run: docker compose -f docker-compose.yml --project-name ${{ secrets.STACK_NAME_PRODUCTION }} build # 构建镜像
+      - run: docker compose -f docker-compose.yml --project-name ${{ secrets.STACK_NAME_PRODUCTION }} up -d # 启动服务
