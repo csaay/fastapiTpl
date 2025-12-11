@@ -6,4 +6,6 @@ node_modules/
 /playwright/.cache/
 .idea
 .DS_Store
+.venv
+.DS_Store
 .env
