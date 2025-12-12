@@ -19,9 +19,22 @@ OpenAPI.TOKEN = async () => {
 }
 
 const handleApiError = (error: Error) => {
-  if (error instanceof ApiError && [401, 403].includes(error.status)) {
-    localStorage.removeItem("access_token")
-    window.location.href = "/login"
+  if (error instanceof ApiError) {
+    const { status, url } = error
+    
+    // 401/403: 未认证或权限不足，跳转登录
+    if ([401, 403].includes(status)) {
+      localStorage.removeItem("access_token")
+      window.location.href = "/login"
+      return
+    }
+    
+    // 404 + /users/me: 当前用户被删除，跳转登录
+    if (status === 404 && url.includes("/users/me")) {
+      localStorage.removeItem("access_token")
+      window.location.href = "/login"
+      return
+    }
   }
 }
 const queryClient = new QueryClient({

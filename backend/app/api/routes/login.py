@@ -1,3 +1,6 @@
+"""
+登录相关路由
+"""
 from datetime import timedelta
 from typing import Annotated, Any
 
@@ -5,13 +8,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.api.response import success
 from app.core import security
 from app.core.config import settings
 from app.core.security import get_password_hash
 from app.models import ApiResponse, NewPassword, Token, UserPublic
+from app.repositories import user_repository
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
@@ -29,8 +32,8 @@ def login_access_token(
     """
     OAuth2 兼容的 token 登录，获取访问令牌
     """
-    user = crud.authenticate(
-        session=session, email=form_data.username, password=form_data.password
+    user = user_repository.authenticate(
+        session, email=form_data.username, password=form_data.password
     )
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
@@ -58,7 +61,7 @@ def recover_password(email: str, session: SessionDep) -> Any:
     """
     密码恢复
     """
-    user = crud.get_user_by_email(session=session, email=email)
+    user = user_repository.get_by_email(session, email=email)
 
     if not user:
         raise HTTPException(
@@ -85,7 +88,7 @@ def reset_password(session: SessionDep, body: NewPassword) -> Any:
     email = verify_password_reset_token(token=body.token)
     if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
-    user = crud.get_user_by_email(session=session, email=email)
+    user = user_repository.get_by_email(session, email=email)
     if not user:
         raise HTTPException(
             status_code=404,
@@ -109,7 +112,7 @@ def recover_password_html_content(email: str, session: SessionDep) -> Any:
     """
     获取密码恢复邮件的 HTML 内容
     """
-    user = crud.get_user_by_email(session=session, email=email)
+    user = user_repository.get_by_email(session, email=email)
 
     if not user:
         raise HTTPException(

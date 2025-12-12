@@ -1,10 +1,12 @@
+"""
+用户相关路由
+"""
 import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import col, delete, func, select
 
-from app import crud
 from app.api.deps import (
     CurrentUser,
     SessionDep,
@@ -25,6 +27,7 @@ from app.models import (
     UserUpdate,
     UserUpdateMe,
 )
+from app.repositories import user_repository
 from app.utils import generate_new_account_email, send_email
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -39,14 +42,7 @@ def read_users(session: SessionDep, page: int = 1, page_size: int = 20) -> Any:
     """
     获取用户列表（分页）
     """
-    skip = (page - 1) * page_size
-
-    count_statement = select(func.count()).select_from(User)
-    total = session.exec(count_statement).one()
-
-    statement = select(User).offset(skip).limit(page_size)
-    users = session.exec(statement).all()
-
+    users, total = user_repository.get_multi(session, page=page, page_size=page_size)
     return paged_response(items=list(users), total=total, page=page, page_size=page_size)
 
 
@@ -59,14 +55,14 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
     """
     创建新用户
     """
-    user = crud.get_user_by_email(session=session, email=user_in.email)
+    user = user_repository.get_by_email(session, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=400,
             detail="The user with this email already exists in the system.",
         )
 
-    user = crud.create_user(session=session, user_create=user_in)
+    user = user_repository.create(session, obj_in=user_in)
     if settings.emails_enabled and user_in.email:
         email_data = generate_new_account_email(
             email_to=user_in.email, username=user_in.email, password=user_in.password
@@ -87,7 +83,7 @@ def update_user_me(
     更新当前用户信息
     """
     if user_in.email:
-        existing_user = crud.get_user_by_email(session=session, email=user_in.email)
+        existing_user = user_repository.get_by_email(session, email=user_in.email)
         if existing_user and existing_user.id != current_user.id:
             raise HTTPException(
                 status_code=409, detail="User with this email already exists"
@@ -147,14 +143,14 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     """
     用户注册（无需登录）
     """
-    user = crud.get_user_by_email(session=session, email=user_in.email)
+    user = user_repository.get_by_email(session, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=400,
             detail="The user with this email already exists in the system",
         )
     user_create = UserCreate.model_validate(user_in)
-    user = crud.create_user(session=session, user_create=user_create)
+    user = user_repository.create(session, obj_in=user_create)
     return success(data=user)
 
 
@@ -165,7 +161,7 @@ def read_user_by_id(
     """
     根据 ID 获取用户
     """
-    user = session.get(User, user_id)
+    user = user_repository.get(session, user_id)
     if user == current_user:
         return success(data=user)
     if not current_user.is_superuser:
@@ -190,20 +186,20 @@ def update_user(
     """
     更新用户信息
     """
-    db_user = session.get(User, user_id)
+    db_user = user_repository.get(session, user_id)
     if not db_user:
         raise HTTPException(
             status_code=404,
             detail="The user with this id does not exist in the system",
         )
     if user_in.email:
-        existing_user = crud.get_user_by_email(session=session, email=user_in.email)
+        existing_user = user_repository.get_by_email(session, email=user_in.email)
         if existing_user and existing_user.id != user_id:
             raise HTTPException(
                 status_code=409, detail="User with this email already exists"
             )
 
-    db_user = crud.update_user(session=session, db_user=db_user, user_in=user_in)
+    db_user = user_repository.update(session, db_obj=db_user, obj_in=user_in)
     return success(data=db_user)
 
 
@@ -218,7 +214,7 @@ def delete_user(
     """
     删除用户
     """
-    user = session.get(User, user_id)
+    user = user_repository.get(session, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if user == current_user:
