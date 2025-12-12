@@ -1,7 +1,11 @@
 import uuid
+from typing import Generic, TypeVar
 
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
+
+# 泛型类型变量
+T = TypeVar("T")
 
 
 # Shared properties
@@ -111,3 +115,24 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str = Field(min_length=8, max_length=128)
+
+
+# ==================== 统一响应模型 ====================
+
+
+class PagedData(SQLModel, Generic[T]):
+    """分页数据结构"""
+
+    items: list[T]  # 当前页数据列表
+    total: int  # 总记录数
+    page: int = 1  # 当前页码
+    page_size: int = 20  # 每页数量
+    pages: int = 0  # 总页数
+
+
+class ApiResponse(SQLModel, Generic[T]):
+    """统一 API 响应模型"""
+
+    code: int = 200
+    message: str = "success"
+    data: T | None = None

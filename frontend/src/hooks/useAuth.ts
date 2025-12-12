@@ -22,7 +22,10 @@ const useAuth = () => {
 
   const { data: user } = useQuery<UserPublic | null, Error>({
     queryKey: ["currentUser"],
-    queryFn: UsersService.readUserMe,
+    queryFn: async () => {
+      const response = await UsersService.readUserMe()
+      return response.data as UserPublic
+    },
     enabled: isLoggedIn(),
   })
 
@@ -42,7 +45,8 @@ const useAuth = () => {
     const response = await LoginService.loginAccessToken({
       formData: data,
     })
-    localStorage.setItem("access_token", response.access_token)
+    const tokenData = response.data as { access_token: string }
+    localStorage.setItem("access_token", tokenData.access_token)
   }
 
   const loginMutation = useMutation({

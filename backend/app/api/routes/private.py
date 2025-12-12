@@ -4,8 +4,10 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.api.deps import SessionDep
+from app.api.response import success
 from app.core.security import get_password_hash
 from app.models import (
+    ApiResponse,
     User,
     UserPublic,
 )
@@ -20,12 +22,11 @@ class PrivateUserCreate(BaseModel):
     is_verified: bool = False
 
 
-@router.post("/users/", response_model=UserPublic)
+@router.post("/users/", response_model=ApiResponse[UserPublic])
 def create_user(user_in: PrivateUserCreate, session: SessionDep) -> Any:
     """
-    Create a new user.
+    创建新用户（私有接口）
     """
-
     user = User(
         email=user_in.email,
         full_name=user_in.full_name,
@@ -34,5 +35,7 @@ def create_user(user_in: PrivateUserCreate, session: SessionDep) -> Any:
 
     session.add(user)
     session.commit()
+    session.refresh(user)
 
-    return user
+    return success(data=user)
+

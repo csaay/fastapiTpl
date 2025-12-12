@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { Search } from "lucide-react"
 import { Suspense } from "react"
 
-import { ItemsService } from "@/client"
+import { ItemsService, type ItemPublic, type PagedData } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
 import AddItem from "@/components/Items/AddItem"
 import { columns } from "@/components/Items/columns"
@@ -11,7 +11,10 @@ import PendingItems from "@/components/Pending/PendingItems"
 
 function getItemsQueryOptions() {
   return {
-    queryFn: () => ItemsService.readItems({ skip: 0, limit: 100 }),
+    queryFn: async () => {
+      const response = await ItemsService.readItems({ page: 1, pageSize: 100 })
+      return response.data as PagedData<ItemPublic>
+    },
     queryKey: ["items"],
   }
 }
@@ -30,7 +33,7 @@ export const Route = createFileRoute("/_layout/items")({
 function ItemsTableContent() {
   const { data: items } = useSuspenseQuery(getItemsQueryOptions())
 
-  if (items.data.length === 0) {
+  if (items.items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center text-center py-12">
         <div className="rounded-full bg-muted p-4 mb-4">
@@ -42,7 +45,7 @@ function ItemsTableContent() {
     )
   }
 
-  return <DataTable columns={columns} data={items.data} />
+  return <DataTable columns={columns} data={items.items} />
 }
 
 function ItemsTable() {

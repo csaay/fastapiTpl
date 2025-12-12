@@ -10,17 +10,18 @@ from app.api.deps import (
     SessionDep,
     get_current_active_superuser,
 )
+from app.api.response import paged_response, success
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.models import (
+    ApiResponse,
     Item,
-    Message,
+    PagedData,
     UpdatePassword,
     User,
     UserCreate,
     UserPublic,
     UserRegister,
-    UsersPublic,
     UserUpdate,
     UserUpdateMe,
 )
@@ -32,28 +33,31 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.get(
     "/",
     dependencies=[Depends(get_current_active_superuser)],
-    response_model=UsersPublic,
+    response_model=ApiResponse[PagedData[UserPublic]],
 )
-def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
+def read_users(session: SessionDep, page: int = 1, page_size: int = 20) -> Any:
     """
-    Retrieve users.
+    获取用户列表（分页）
     """
+    skip = (page - 1) * page_size
 
     count_statement = select(func.count()).select_from(User)
-    count = session.exec(count_statement).one()
+    total = session.exec(count_statement).one()
 
-    statement = select(User).offset(skip).limit(limit)
+    statement = select(User).offset(skip).limit(page_size)
     users = session.exec(statement).all()
 
-    return UsersPublic(data=users, count=count)
+    return paged_response(items=list(users), total=total, page=page, page_size=page_size)
 
 
 @router.post(
-    "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
+    "/",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=ApiResponse[UserPublic],
 )
 def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
     """
-    Create new user.
+    创建新用户
     """
     user = crud.get_user_by_email(session=session, email=user_in.email)
     if user:
@@ -72,17 +76,16 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
             subject=email_data.subject,
             html_content=email_data.html_content,
         )
-    return user
+    return success(data=user)
 
 
-@router.patch("/me", response_model=UserPublic)
+@router.patch("/me", response_model=ApiResponse[UserPublic])
 def update_user_me(
     *, session: SessionDep, user_in: UserUpdateMe, current_user: CurrentUser
 ) -> Any:
     """
-    Update own user.
+    更新当前用户信息
     """
-
     if user_in.email:
         existing_user = crud.get_user_by_email(session=session, email=user_in.email)
         if existing_user and existing_user.id != current_user.id:
@@ -94,15 +97,15 @@ def update_user_me(
     session.add(current_user)
     session.commit()
     session.refresh(current_user)
-    return current_user
+    return success(data=current_user)
 
 
-@router.patch("/me/password", response_model=Message)
+@router.patch("/me/password", response_model=ApiResponse[None])
 def update_password_me(
     *, session: SessionDep, body: UpdatePassword, current_user: CurrentUser
 ) -> Any:
     """
-    Update own password.
+    更新当前用户密码
     """
     if not verify_password(body.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect password")
@@ -114,21 +117,21 @@ def update_password_me(
     current_user.hashed_password = hashed_password
     session.add(current_user)
     session.commit()
-    return Message(message="Password updated successfully")
+    return success(message="Password updated successfully")
 
 
-@router.get("/me", response_model=UserPublic)
+@router.get("/me", response_model=ApiResponse[UserPublic])
 def read_user_me(current_user: CurrentUser) -> Any:
     """
-    Get current user.
+    获取当前用户信息
     """
-    return current_user
+    return success(data=current_user)
 
 
-@router.delete("/me", response_model=Message)
+@router.delete("/me", response_model=ApiResponse[None])
 def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
     """
-    Delete own user.
+    删除当前用户
     """
     if current_user.is_superuser:
         raise HTTPException(
@@ -136,13 +139,13 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
         )
     session.delete(current_user)
     session.commit()
-    return Message(message="User deleted successfully")
+    return success(message="User deleted successfully")
 
 
-@router.post("/signup", response_model=UserPublic)
+@router.post("/signup", response_model=ApiResponse[UserPublic])
 def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     """
-    Create new user without the need to be logged in.
+    用户注册（无需登录）
     """
     user = crud.get_user_by_email(session=session, email=user_in.email)
     if user:
@@ -152,31 +155,31 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
         )
     user_create = UserCreate.model_validate(user_in)
     user = crud.create_user(session=session, user_create=user_create)
-    return user
+    return success(data=user)
 
 
-@router.get("/{user_id}", response_model=UserPublic)
+@router.get("/{user_id}", response_model=ApiResponse[UserPublic])
 def read_user_by_id(
     user_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
 ) -> Any:
     """
-    Get a specific user by id.
+    根据 ID 获取用户
     """
     user = session.get(User, user_id)
     if user == current_user:
-        return user
+        return success(data=user)
     if not current_user.is_superuser:
         raise HTTPException(
             status_code=403,
             detail="The user doesn't have enough privileges",
         )
-    return user
+    return success(data=user)
 
 
 @router.patch(
     "/{user_id}",
     dependencies=[Depends(get_current_active_superuser)],
-    response_model=UserPublic,
+    response_model=ApiResponse[UserPublic],
 )
 def update_user(
     *,
@@ -185,9 +188,8 @@ def update_user(
     user_in: UserUpdate,
 ) -> Any:
     """
-    Update a user.
+    更新用户信息
     """
-
     db_user = session.get(User, user_id)
     if not db_user:
         raise HTTPException(
@@ -202,15 +204,19 @@ def update_user(
             )
 
     db_user = crud.update_user(session=session, db_user=db_user, user_in=user_in)
-    return db_user
+    return success(data=db_user)
 
 
-@router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
+@router.delete(
+    "/{user_id}",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=ApiResponse[None],
+)
 def delete_user(
     session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
-) -> Message:
+) -> Any:
     """
-    Delete a user.
+    删除用户
     """
     user = session.get(User, user_id)
     if not user:
@@ -223,4 +229,4 @@ def delete_user(
     session.exec(statement)  # type: ignore
     session.delete(user)
     session.commit()
-    return Message(message="User deleted successfully")
+    return success(message="User deleted successfully")

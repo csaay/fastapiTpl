@@ -1,14 +1,14 @@
-name: Playwright Tests # Playwright 端到端测试
+name: Playwright Tests # Playwright 端到端测试，用于模拟用户操作验证整个应用的功能
 
 on:
   push:
     branches:
-      - main
+      - main # 推送到 main 分支时自动触发
   pull_request:
     types:
-      - opened
-      - synchronize
-  workflow_dispatch:
+      - opened # 新建 PR 时触发
+      - synchronize # PR 更新代码时触发
+  workflow_dispatch: # 允许手动在 GitHub Actions 界面触发
     inputs:
       debug_enabled:
         description: "Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)"
@@ -16,116 +16,148 @@ on:
         default: "false"
 
 jobs:
+  # 任务 1: 检查变更
+  # 目的: 只有当相关文件（后端、前端、配置等）发生变化时，才运行耗时的端到端测试，节省资源
   changes:
     runs-on: ubuntu-latest
-    # Set job outputs to values from filter step
+    # 将 filter 步骤的输出导出，供后续任务使用
     outputs:
       changed: ${{ steps.filter.outputs.changed }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6 # 检出代码
+
       # For pull requests it's not necessary to checkout the code but for the main branch it is
-      - uses: dorny/paths-filter@v3 # 检查文件变更
-        id: filter
+      - uses: dorny/paths-filter@v3 # 路径过滤器插件
+        id: filter # 步骤 ID，用于后续引用输出
         with:
           filters: |
             changed:
-              - backend/**
-              - frontend/**
-              - .env
-              - docker-compose*.yml
-              - .github/workflows/playwright.yml
+              - backend/** # 后端代码变更
+              - frontend/** # 前端代码变更
+              - .env # 环境变量变更
+              - docker-compose*.yml # Docker 配置变更
+              - .github/workflows/playwright.yml # 工作流本身变更
 
+  # 任务 2: 运行 Playwright 测试
   test-playwright:
     needs:
-      - changes
-    if: ${{ needs.changes.outputs.changed == 'true' }} # 仅当相关文件变更时运行
-    timeout-minutes: 60
+      - changes # 依赖 changes 任务
+    if: ${{ needs.changes.outputs.changed == 'true' }} # 仅当检测到相关变更时运行
+    timeout-minutes: 60 # 设置超时时间，防止挂死
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        shardIndex: [1, 2, 3, 4] # 使用矩阵策略进行分片并行测试
-        shardTotal: [4]
-      fail-fast: false
+        shardIndex: [1, 2, 3, 4] # 使用矩阵策略进行分片并行测试，将测试分为 4 组
+        shardTotal: [4] # 总分片数
+      fail-fast: false # 即使其中一个分片失败，也不立即取消其他分片，以便收集完整报告
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v6 # 检出代码
+
+      - uses: actions/setup-node@v6 # 设置 Node.js 环境（前端依赖）
         with:
           node-version: lts/*
-      - uses: actions/setup-python@v6
+
+      - uses: actions/setup-python@v6 # 设置 Python 环境（后端依赖）
         with:
           python-version: "3.10"
+
       - name: Setup tmate session # 调试会话（如果启用）
         uses: mxschmitt/action-tmate@v3
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled == 'true' }}
         with:
           limit-access-to-actor: true
-      - name: Install uv
+
+      - name: Install uv # 安装 uv (快速的 Python 包管理工具)
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.4.15"
           enable-cache: true
-      - run: uv sync
+
+      - run: uv sync # 同步后端 Python 依赖
         working-directory: backend
-      - run: npm ci
+
+      - run: npm ci # 安装前端 Node.js 依赖
         working-directory: frontend
-      - run: uv run bash scripts/generate-client.sh # 生成客户端代码以供测试
+
+      - run: uv run bash scripts/generate-client.sh # 生成前端使用的 API 客户端代码，确保测试针对最新接口
         env:
           VIRTUAL_ENV: backend/.venv
-      - run: docker compose build
-      - run: docker compose down -v --remove-orphans
+
+      - run: docker compose build # 构建 Docker 镜像
+
+      - run: docker compose down -v --remove-orphans # 清理旧的容器和卷，确保环境纯净
+
       - name: Run Playwright tests # 运行 Playwright 测试
+        # --rm: 测试结束后删除容器
+        # --fail-on-flaky-tests: 如果有不稳定的测试（时过时不过）则标记为失败
+        # --trace=retain-on-failure: 失败时保留调试痕迹
+        # --shard: 指定当前分片
         run: docker compose run --rm playwright npx playwright test --fail-on-flaky-tests --trace=retain-on-failure --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
-      - run: docker compose down -v --remove-orphans
-      - name: Upload blob report to GitHub Actions Artifacts # 上传分片测试报告
-        if: ${{ !cancelled() }}
+
+      - run: docker compose down -v --remove-orphans # 测试结束清理环境
+
+      - name: Upload blob report to GitHub Actions Artifacts # 上传分片测试报告（Blob 格式）
+        if: ${{ !cancelled() }} # 即使测试失败也要上传报告，以便后续查看原因
         uses: actions/upload-artifact@v5
         with:
           name: blob-report-${{ matrix.shardIndex }}
           path: frontend/blob-report
           include-hidden-files: true
-          retention-days: 1
+          retention-days: 1 # 报告保留 1 天
 
+  # 任务 3: 合并测试报告
   merge-playwright-reports:
     needs:
-      - test-playwright
+      - test-playwright # 等待所有测试分片完成
       - changes
-    # Merge reports after playwright-tests, even if some shards have failed
+    # 只要检测到变更且任务未被取消， 即使部分测试失败也运行合并报告
     if: ${{ !cancelled() && needs.changes.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+
       - uses: actions/setup-node@v6
         with:
           node-version: 20
-      - name: Install dependencies
+
+      - name: Install dependencies # 安装合并报告所需的依赖
         run: npm ci
         working-directory: frontend
-      - name: Download blob reports from GitHub Actions Artifacts # 下载所有分片的报告
+
+      - name: Download blob reports from GitHub Actions Artifacts # 下载所有分片的 Blob 报告
         uses: actions/download-artifact@v6
         with:
           path: frontend/all-blob-reports
           pattern: blob-report-*
-          merge-multiple: true
-      - name: Merge into HTML Report # 合并为 HTML 报告
+          merge-multiple: true # 将所有下载的报告合并到一个目录
+
+      - name: Merge into HTML Report # 将 Blob 报告合并为人类可读的 HTML 报告
         run: npx playwright merge-reports --reporter html ./all-blob-reports
         working-directory: frontend
+
       - name: Upload HTML report # 上传最终 HTML 报告
         uses: actions/upload-artifact@v5
         with:
           name: html-report--attempt-${{ github.run_attempt }}
           path: frontend/playwright-report
-          retention-days: 30
+          retention-days: 30 # 保留 30 天
           include-hidden-files: true
 
-  # https://github.com/marketplace/actions/alls-green#why
-  alls-green-playwright: # This job does nothing and is only used for the branch protection
-    if: always()
+  # 任务 4: 分支保护检查
+  # 目的: 因为 test-playwright 是有条件运行的（if changed），GitHub 的分支保护规则可能因为任务被跳过而无法准确判断状态。
+  # 这个任务总是运行，并根据 test-playwright 的结果返回成功或失败，作为一个稳定的状态检查点。
+  # 参考: https://github.com/marketplace/actions/alls-green#why
+  alls-green-playwright:
+    if: always() # 总是运行
     needs:
-      - test-playwright
+      - test-playwright # 依赖测试任务
     runs-on: ubuntu-latest
     steps:
-      - name: Decide whether the needed jobs succeeded or failed # 检查所有需要的工作项是否成功（用于分支保护规则）
+      - name: Decide whether the needed jobs succeeded or failed # 判断整体测试是否成功
         uses: re-actors/alls-green@release/v1
         with:
+          # 将依赖作业的状态传递给 action 进行判断
+          # 如果 test-playwright 被跳过（skipped），这里也会视为通过，因为这不是失败
+          # 如果 test-playwright 失败，这里也会失败
           jobs: ${{ toJSON(needs) }}
           allowed-skips: test-playwright

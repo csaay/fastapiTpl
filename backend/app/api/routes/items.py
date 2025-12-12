@@ -5,23 +5,36 @@ from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
-from app.models import Item, ItemCreate, ItemPublic, ItemsPublic, ItemUpdate, Message
+from app.api.response import paged_response, success
+from app.models import (
+    ApiResponse,
+    Item,
+    ItemCreate,
+    ItemPublic,
+    ItemUpdate,
+    PagedData,
+)
 
 router = APIRouter(prefix="/items", tags=["items"])
 
 
-@router.get("/", response_model=ItemsPublic)
+@router.get("/", response_model=ApiResponse[PagedData[ItemPublic]])
 def read_items(
-    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+    session: SessionDep,
+    current_user: CurrentUser,
+    page: int = 1,
+    page_size: int = 20,
 ) -> Any:
     """
-    Retrieve items.
+    获取 Item 列表（分页）
     """
+    # 计算偏移量
+    skip = (page - 1) * page_size
 
     if current_user.is_superuser:
         count_statement = select(func.count()).select_from(Item)
-        count = session.exec(count_statement).one()
-        statement = select(Item).offset(skip).limit(limit)
+        total = session.exec(count_statement).one()
+        statement = select(Item).offset(skip).limit(page_size)
         items = session.exec(statement).all()
     else:
         count_statement = (
@@ -29,46 +42,46 @@ def read_items(
             .select_from(Item)
             .where(Item.owner_id == current_user.id)
         )
-        count = session.exec(count_statement).one()
+        total = session.exec(count_statement).one()
         statement = (
             select(Item)
             .where(Item.owner_id == current_user.id)
             .offset(skip)
-            .limit(limit)
+            .limit(page_size)
         )
         items = session.exec(statement).all()
 
-    return ItemsPublic(data=items, count=count)
+    return paged_response(items=list(items), total=total, page=page, page_size=page_size)
 
 
-@router.get("/{id}", response_model=ItemPublic)
+@router.get("/{id}", response_model=ApiResponse[ItemPublic])
 def read_item(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
     """
-    Get item by ID.
+    根据 ID 获取 Item
     """
     item = session.get(Item, id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     if not current_user.is_superuser and (item.owner_id != current_user.id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
-    return item
+    return success(data=item)
 
 
-@router.post("/", response_model=ItemPublic)
+@router.post("/", response_model=ApiResponse[ItemPublic])
 def create_item(
     *, session: SessionDep, current_user: CurrentUser, item_in: ItemCreate
 ) -> Any:
     """
-    Create new item.
+    创建新 Item
     """
     item = Item.model_validate(item_in, update={"owner_id": current_user.id})
     session.add(item)
     session.commit()
     session.refresh(item)
-    return item
+    return success(data=item)
 
 
-@router.put("/{id}", response_model=ItemPublic)
+@router.put("/{id}", response_model=ApiResponse[ItemPublic])
 def update_item(
     *,
     session: SessionDep,
@@ -77,7 +90,7 @@ def update_item(
     item_in: ItemUpdate,
 ) -> Any:
     """
-    Update an item.
+    更新 Item
     """
     item = session.get(Item, id)
     if not item:
@@ -89,15 +102,15 @@ def update_item(
     session.add(item)
     session.commit()
     session.refresh(item)
-    return item
+    return success(data=item)
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", response_model=ApiResponse[None])
 def delete_item(
     session: SessionDep, current_user: CurrentUser, id: uuid.UUID
-) -> Message:
+) -> Any:
     """
-    Delete an item.
+    删除 Item
     """
     item = session.get(Item, id)
     if not item:
@@ -106,4 +119,4 @@ def delete_item(
         raise HTTPException(status_code=400, detail="Not enough permissions")
     session.delete(item)
     session.commit()
-    return Message(message="Item deleted successfully")
+    return success(message="Item deleted successfully")

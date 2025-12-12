@@ -7,10 +7,11 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.api.response import success
 from app.core import security
 from app.core.config import settings
 from app.core.security import get_password_hash
-from app.models import Message, NewPassword, Token, UserPublic
+from app.models import ApiResponse, NewPassword, Token, UserPublic
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
@@ -21,12 +22,12 @@ from app.utils import (
 router = APIRouter(tags=["login"])
 
 
-@router.post("/login/access-token")
+@router.post("/login/access-token", response_model=ApiResponse[Token])
 def login_access_token(
     session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
-) -> Token:
+) -> Any:
     """
-    OAuth2 compatible token login, get an access token for future requests
+    OAuth2 兼容的 token 登录，获取访问令牌
     """
     user = crud.authenticate(
         session=session, email=form_data.username, password=form_data.password
@@ -36,25 +37,26 @@ def login_access_token(
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return Token(
+    token = Token(
         access_token=security.create_access_token(
             user.id, expires_delta=access_token_expires
         )
     )
+    return success(data=token)
 
 
-@router.post("/login/test-token", response_model=UserPublic)
+@router.post("/login/test-token", response_model=ApiResponse[UserPublic])
 def test_token(current_user: CurrentUser) -> Any:
     """
-    Test access token
+    测试访问令牌
     """
-    return current_user
+    return success(data=current_user)
 
 
-@router.post("/password-recovery/{email}")
-def recover_password(email: str, session: SessionDep) -> Message:
+@router.post("/password-recovery/{email}", response_model=ApiResponse[None])
+def recover_password(email: str, session: SessionDep) -> Any:
     """
-    Password Recovery
+    密码恢复
     """
     user = crud.get_user_by_email(session=session, email=email)
 
@@ -72,13 +74,13 @@ def recover_password(email: str, session: SessionDep) -> Message:
         subject=email_data.subject,
         html_content=email_data.html_content,
     )
-    return Message(message="Password recovery email sent")
+    return success(message="Password recovery email sent")
 
 
-@router.post("/reset-password/")
-def reset_password(session: SessionDep, body: NewPassword) -> Message:
+@router.post("/reset-password/", response_model=ApiResponse[None])
+def reset_password(session: SessionDep, body: NewPassword) -> Any:
     """
-    Reset password
+    重置密码
     """
     email = verify_password_reset_token(token=body.token)
     if not email:
@@ -95,7 +97,7 @@ def reset_password(session: SessionDep, body: NewPassword) -> Message:
     user.hashed_password = hashed_password
     session.add(user)
     session.commit()
-    return Message(message="Password updated successfully")
+    return success(message="Password updated successfully")
 
 
 @router.post(
@@ -105,7 +107,7 @@ def reset_password(session: SessionDep, body: NewPassword) -> Message:
 )
 def recover_password_html_content(email: str, session: SessionDep) -> Any:
     """
-    HTML Content for Password Recovery
+    获取密码恢复邮件的 HTML 内容
     """
     user = crud.get_user_by_email(session=session, email=email)
 

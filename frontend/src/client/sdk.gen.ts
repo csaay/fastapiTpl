@@ -8,11 +8,11 @@ import type { ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, I
 export class ItemsService {
     /**
      * Read Items
-     * Retrieve items.
+     * 获取 Item 列表（分页）
      * @param data The data for the request.
-     * @param data.skip
-     * @param data.limit
-     * @returns ItemsPublic Successful Response
+     * @param data.page
+     * @param data.pageSize
+     * @returns ApiResponse_PagedData_ItemPublic__ Successful Response
      * @throws ApiError
      */
     public static readItems(data: ItemsReadItemsData = {}): CancelablePromise<ItemsReadItemsResponse> {
@@ -20,8 +20,8 @@ export class ItemsService {
             method: 'GET',
             url: '/api/v1/items/',
             query: {
-                skip: data.skip,
-                limit: data.limit
+                page: data.page,
+                page_size: data.pageSize
             },
             errors: {
                 422: 'Validation Error'
@@ -31,10 +31,10 @@ export class ItemsService {
     
     /**
      * Create Item
-     * Create new item.
+     * 创建新 Item
      * @param data The data for the request.
      * @param data.requestBody
-     * @returns ItemPublic Successful Response
+     * @returns ApiResponse_ItemPublic_ Successful Response
      * @throws ApiError
      */
     public static createItem(data: ItemsCreateItemData): CancelablePromise<ItemsCreateItemResponse> {
@@ -51,10 +51,10 @@ export class ItemsService {
     
     /**
      * Read Item
-     * Get item by ID.
+     * 根据 ID 获取 Item
      * @param data The data for the request.
      * @param data.id
-     * @returns ItemPublic Successful Response
+     * @returns ApiResponse_ItemPublic_ Successful Response
      * @throws ApiError
      */
     public static readItem(data: ItemsReadItemData): CancelablePromise<ItemsReadItemResponse> {
@@ -72,11 +72,11 @@ export class ItemsService {
     
     /**
      * Update Item
-     * Update an item.
+     * 更新 Item
      * @param data The data for the request.
      * @param data.id
      * @param data.requestBody
-     * @returns ItemPublic Successful Response
+     * @returns ApiResponse_ItemPublic_ Successful Response
      * @throws ApiError
      */
     public static updateItem(data: ItemsUpdateItemData): CancelablePromise<ItemsUpdateItemResponse> {
@@ -96,10 +96,10 @@ export class ItemsService {
     
     /**
      * Delete Item
-     * Delete an item.
+     * 删除 Item
      * @param data The data for the request.
      * @param data.id
-     * @returns Message Successful Response
+     * @returns ApiResponse_NoneType_ Successful Response
      * @throws ApiError
      */
     public static deleteItem(data: ItemsDeleteItemData): CancelablePromise<ItemsDeleteItemResponse> {
@@ -119,10 +119,10 @@ export class ItemsService {
 export class LoginService {
     /**
      * Login Access Token
-     * OAuth2 compatible token login, get an access token for future requests
+     * OAuth2 兼容的 token 登录，获取访问令牌
      * @param data The data for the request.
      * @param data.formData
-     * @returns Token Successful Response
+     * @returns ApiResponse_Token_ Successful Response
      * @throws ApiError
      */
     public static loginAccessToken(data: LoginLoginAccessTokenData): CancelablePromise<LoginLoginAccessTokenResponse> {
@@ -139,8 +139,8 @@ export class LoginService {
     
     /**
      * Test Token
-     * Test access token
-     * @returns UserPublic Successful Response
+     * 测试访问令牌
+     * @returns ApiResponse_UserPublic_ Successful Response
      * @throws ApiError
      */
     public static testToken(): CancelablePromise<LoginTestTokenResponse> {
@@ -152,10 +152,10 @@ export class LoginService {
     
     /**
      * Recover Password
-     * Password Recovery
+     * 密码恢复
      * @param data The data for the request.
      * @param data.email
-     * @returns Message Successful Response
+     * @returns ApiResponse_NoneType_ Successful Response
      * @throws ApiError
      */
     public static recoverPassword(data: LoginRecoverPasswordData): CancelablePromise<LoginRecoverPasswordResponse> {
@@ -173,10 +173,10 @@ export class LoginService {
     
     /**
      * Reset Password
-     * Reset password
+     * 重置密码
      * @param data The data for the request.
      * @param data.requestBody
-     * @returns Message Successful Response
+     * @returns ApiResponse_NoneType_ Successful Response
      * @throws ApiError
      */
     public static resetPassword(data: LoginResetPasswordData): CancelablePromise<LoginResetPasswordResponse> {
@@ -193,7 +193,7 @@ export class LoginService {
     
     /**
      * Recover Password Html Content
-     * HTML Content for Password Recovery
+     * 获取密码恢复邮件的 HTML 内容
      * @param data The data for the request.
      * @param data.email
      * @returns string Successful Response
@@ -216,10 +216,10 @@ export class LoginService {
 export class PrivateService {
     /**
      * Create User
-     * Create a new user.
+     * 创建新用户（私有接口）
      * @param data The data for the request.
      * @param data.requestBody
-     * @returns UserPublic Successful Response
+     * @returns ApiResponse_UserPublic_ Successful Response
      * @throws ApiError
      */
     public static createUser(data: PrivateCreateUserData): CancelablePromise<PrivateCreateUserResponse> {
@@ -238,11 +238,11 @@ export class PrivateService {
 export class UsersService {
     /**
      * Read Users
-     * Retrieve users.
+     * 获取用户列表（分页）
      * @param data The data for the request.
-     * @param data.skip
-     * @param data.limit
-     * @returns UsersPublic Successful Response
+     * @param data.page
+     * @param data.pageSize
+     * @returns ApiResponse_PagedData_UserPublic__ Successful Response
      * @throws ApiError
      */
     public static readUsers(data: UsersReadUsersData = {}): CancelablePromise<UsersReadUsersResponse> {
@@ -250,8 +250,8 @@ export class UsersService {
             method: 'GET',
             url: '/api/v1/users/',
             query: {
-                skip: data.skip,
-                limit: data.limit
+                page: data.page,
+                page_size: data.pageSize
             },
             errors: {
                 422: 'Validation Error'
@@ -261,10 +261,10 @@ export class UsersService {
     
     /**
      * Create User
-     * Create new user.
+     * 创建新用户
      * @param data The data for the request.
      * @param data.requestBody
-     * @returns UserPublic Successful Response
+     * @returns ApiResponse_UserPublic_ Successful Response
      * @throws ApiError
      */
     public static createUser(data: UsersCreateUserData): CancelablePromise<UsersCreateUserResponse> {
@@ -281,8 +281,8 @@ export class UsersService {
     
     /**
      * Read User Me
-     * Get current user.
-     * @returns UserPublic Successful Response
+     * 获取当前用户信息
+     * @returns ApiResponse_UserPublic_ Successful Response
      * @throws ApiError
      */
     public static readUserMe(): CancelablePromise<UsersReadUserMeResponse> {
@@ -294,8 +294,8 @@ export class UsersService {
     
     /**
      * Delete User Me
-     * Delete own user.
-     * @returns Message Successful Response
+     * 删除当前用户
+     * @returns ApiResponse_NoneType_ Successful Response
      * @throws ApiError
      */
     public static deleteUserMe(): CancelablePromise<UsersDeleteUserMeResponse> {
@@ -307,10 +307,10 @@ export class UsersService {
     
     /**
      * Update User Me
-     * Update own user.
+     * 更新当前用户信息
      * @param data The data for the request.
      * @param data.requestBody
-     * @returns UserPublic Successful Response
+     * @returns ApiResponse_UserPublic_ Successful Response
      * @throws ApiError
      */
     public static updateUserMe(data: UsersUpdateUserMeData): CancelablePromise<UsersUpdateUserMeResponse> {
@@ -327,10 +327,10 @@ export class UsersService {
     
     /**
      * Update Password Me
-     * Update own password.
+     * 更新当前用户密码
      * @param data The data for the request.
      * @param data.requestBody
-     * @returns Message Successful Response
+     * @returns ApiResponse_NoneType_ Successful Response
      * @throws ApiError
      */
     public static updatePasswordMe(data: UsersUpdatePasswordMeData): CancelablePromise<UsersUpdatePasswordMeResponse> {
@@ -347,10 +347,10 @@ export class UsersService {
     
     /**
      * Register User
-     * Create new user without the need to be logged in.
+     * 用户注册（无需登录）
      * @param data The data for the request.
      * @param data.requestBody
-     * @returns UserPublic Successful Response
+     * @returns ApiResponse_UserPublic_ Successful Response
      * @throws ApiError
      */
     public static registerUser(data: UsersRegisterUserData): CancelablePromise<UsersRegisterUserResponse> {
@@ -367,10 +367,10 @@ export class UsersService {
     
     /**
      * Read User By Id
-     * Get a specific user by id.
+     * 根据 ID 获取用户
      * @param data The data for the request.
      * @param data.userId
-     * @returns UserPublic Successful Response
+     * @returns ApiResponse_UserPublic_ Successful Response
      * @throws ApiError
      */
     public static readUserById(data: UsersReadUserByIdData): CancelablePromise<UsersReadUserByIdResponse> {
@@ -388,11 +388,11 @@ export class UsersService {
     
     /**
      * Update User
-     * Update a user.
+     * 更新用户信息
      * @param data The data for the request.
      * @param data.userId
      * @param data.requestBody
-     * @returns UserPublic Successful Response
+     * @returns ApiResponse_UserPublic_ Successful Response
      * @throws ApiError
      */
     public static updateUser(data: UsersUpdateUserData): CancelablePromise<UsersUpdateUserResponse> {
@@ -412,10 +412,10 @@ export class UsersService {
     
     /**
      * Delete User
-     * Delete a user.
+     * 删除用户
      * @param data The data for the request.
      * @param data.userId
-     * @returns Message Successful Response
+     * @returns ApiResponse_NoneType_ Successful Response
      * @throws ApiError
      */
     public static deleteUser(data: UsersDeleteUserData): CancelablePromise<UsersDeleteUserResponse> {
@@ -435,10 +435,10 @@ export class UsersService {
 export class UtilsService {
     /**
      * Test Email
-     * Test emails.
+     * 测试邮件发送
      * @param data The data for the request.
      * @param data.emailTo
-     * @returns Message Successful Response
+     * @returns ApiResponse_NoneType_ Successful Response
      * @throws ApiError
      */
     public static testEmail(data: UtilsTestEmailData): CancelablePromise<UtilsTestEmailResponse> {
@@ -456,7 +456,8 @@ export class UtilsService {
     
     /**
      * Health Check
-     * @returns boolean Successful Response
+     * 健康检查
+     * @returns ApiResponse_bool_ Successful Response
      * @throws ApiError
      */
     public static healthCheck(): CancelablePromise<UtilsHealthCheckResponse> {
