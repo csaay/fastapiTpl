@@ -3,6 +3,9 @@ Models 模块
 
 统一导出所有数据库模型和 schemas（保持向后兼容）
 """
+# SQLModel base class (needed for Alembic)
+from sqlmodel import SQLModel
+
 # 数据库模型
 from app.models.user import User, UserBase
 from app.models.item import Item, ItemBase
@@ -31,6 +34,8 @@ from app.schemas.token import (
 )
 
 __all__ = [
+    # SQLModel base
+    "SQLModel",
     # Database models
     "User",
     "UserBase",
