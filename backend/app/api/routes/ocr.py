@@ -15,9 +15,9 @@ from app.services.ocr import ocr_service
 router = APIRouter(prefix="/ocr", tags=["ocr"])
 
 # 允许的图片格式
-ALLOWED_CONTENT_TYPES = {
+ALLOWED_CONTENT_TYPES: set[str] = {
     "image/jpeg",
-    "image/jpg", 
+    "image/jpg",
     "image/png",
     "image/bmp",
     "image/webp",
@@ -39,12 +39,12 @@ async def recognize_image(file: UploadFile) -> Any:
             status_code=400,
             detail=f"不支持的文件类型: {file.content_type}，仅支持 jpg/png/bmp/webp"
         )
-    
+
     # 读取文件内容
     content = await file.read()
     if not content:
         raise HTTPException(status_code=400, detail="上传的文件为空")
-    
+
     # 调用 OCR 服务
     ocr_result = ocr_service.get_sim(content)
 

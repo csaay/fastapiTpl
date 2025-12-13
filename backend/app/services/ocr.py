@@ -59,8 +59,7 @@ class OcrService:
                 texts.append(text)
         
         full_text = "\n".join(texts)
-        logger.debug("OCR 识别完成，共 %d 条结果", len(items))
-        
+
         return OcrResult(items=items, full_text=full_text)
 
     def get_sim(self, image_bytes: bytes) -> OcrSimResult:
@@ -77,12 +76,13 @@ class OcrService:
         final_str = ""
         start = False
         for item in result.items if result.items else []:
+            # 寻找第一个数字字符开始
             if not start and item.text[0].isdigit():
                 start = True
 
             if not start:
                 continue
-
+            # 仅保留字母数字字符
             if item.text.isalnum():
                 final_str += item.text
                 if len(final_str) >= 20:
