@@ -34,7 +34,7 @@ jobs:
         working-directory: backend
       - run: docker compose down -v --remove-orphans # 测试完成后清理环境
       - name: Store coverage files # 上传测试覆盖率报告作为构件
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-html
           path: backend/htmlcov
