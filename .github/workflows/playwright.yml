@@ -125,7 +125,7 @@ jobs:
         working-directory: frontend
 
       - name: Download blob reports from GitHub Actions Artifacts # 下载所有分片的 Blob 报告
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           path: frontend/all-blob-reports
           pattern: blob-report-*
