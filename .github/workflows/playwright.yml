@@ -98,7 +98,7 @@ jobs:
 
       - name: Upload blob report to GitHub Actions Artifacts # 上传分片测试报告（Blob 格式）
         if: ${{ !cancelled() }} # 即使测试失败也要上传报告，以便后续查看原因
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: blob-report-${{ matrix.shardIndex }}
           path: frontend/blob-report
@@ -136,7 +136,7 @@ jobs:
         working-directory: frontend
 
       - name: Upload HTML report # 上传最终 HTML 报告
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: html-report--attempt-${{ github.run_attempt }}
           path: frontend/playwright-report
