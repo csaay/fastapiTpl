@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.10"
       - run: pip install smokeshow # 安装 smokeshow 工具
-      - uses: actions/download-artifact@v6 # 下载测试覆盖率构件
+      - uses: actions/download-artifact@v7 # 下载测试覆盖率构件
         with:
           name: coverage-html
           path: backend/htmlcov
